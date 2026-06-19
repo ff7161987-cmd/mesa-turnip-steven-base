@@ -42,22 +42,18 @@ prepare_workdir(){
     # 1. IR3 Compiler: 72 regs is the sweet spot for Adreno 650
     sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 72;/g' src/freedreno/ir3/ir3_compiler.c || true
     
-    # 2. LRZ & GMEM: Extreme performance for ETS
+    # 2. GMEM Hysteresis: Keep 60 FPS stable
     sed -i 's/tu_cmd_buffer_emit_gmem_config(cmd, &cmd->state.pass->gmem_config, false);/tu_cmd_buffer_emit_gmem_config(cmd, \&cmd->state.pass->gmem_config, true);/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    sed -i 's/cmd->state.lrz.enabled = true;/cmd->state.lrz.enabled = true; cmd->state.lrz.fast_clear = true;/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
     
     # 3. Pipeline Cache: 512 entries for zero stutter
     sed -i 's/TU_DEVICE_BINARY_CACHE_SIZE = 64/TU_DEVICE_BINARY_CACHE_SIZE = 512/g' src/freedreno/vulkan/tu_device.cc || true
     
-    # 4. Adreno 650 architecture lock (Force A6xx support in Gen8 branch)
+    # 4. Adreno 650 architecture lock
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
     
-    # 5. ETS Optimization: Binning pass for large scenes
-    sed -i 's/binning_pass = false/binning_pass = true/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    
-    # 6. Force 159+ Extensions (Enable experimental features)
-    sed -i 's/tu_has_extension(device, KHR_acceleration_structure)/true/g' src/freedreno/vulkan/tu_device.cc || true
-    sed -i 's/tu_has_extension(device, KHR_ray_tracing_pipeline)/true/g' src/freedreno/vulkan/tu_device.cc || true
+    # 5. RESTORE LIGHTING: Keep LRZ and Binning at default to avoid "dead colors"
+    # (Removed aggressive LRZ and Binning tweaks)
+
 
 
 
