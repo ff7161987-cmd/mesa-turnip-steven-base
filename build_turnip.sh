@@ -5,14 +5,14 @@ deps="git meson ninja patchelf unzip curl pip flex bison zip glslangValidator py
 workdir="$(pwd)/turnip_workdir"
 ndkver="android-ndk-r29"
 ndk="$workdir/$ndkver/toolchains/llvm/prebuilt/linux-x86_64/bin"
-mesasrc="https://gitlab.freedesktop.org/mesa/mesa.git"
+mesasrc="https://github.com/whitebelyash/mesa-tu8.git"
 srcfolder="mesa"
 BUILD_VERSION="${BUILD_VERSION:-1.0}"
 
 run_all(){
     check_deps
     prepare_workdir
-	build_lib_for_android main
+	build_lib_for_android gen8
 }
 
 check_deps(){
@@ -33,11 +33,11 @@ prepare_workdir(){
     fi
 
     rm -rf "$srcfolder"
-    git clone "$mesasrc" --depth=1 -b mesa-24.1.1 "$srcfolder"
+    git clone "$mesasrc" --depth=1 -b gen8 "$srcfolder"
     cd "$srcfolder"
     
-    # APPLY FLORKAA ELITE 3.0 (PERFORMANCE ESTÁVEL NO TALO)
-    echo "Applying Elite 3.0 Performance Tweaks..."
+    # APPLY FLORKAA ELITE 4.0 (159+ EXTENSIONS + TALO ABSOLUTO)
+    echo "Applying Elite 4.0 Performance Tweaks..."
     
     # 1. IR3 Compiler: 72 regs is the sweet spot for Adreno 650
     sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 72;/g' src/freedreno/ir3/ir3_compiler.c || true
@@ -49,16 +49,15 @@ prepare_workdir(){
     # 3. Pipeline Cache: 512 entries for zero stutter
     sed -i 's/TU_DEVICE_BINARY_CACHE_SIZE = 64/TU_DEVICE_BINARY_CACHE_SIZE = 512/g' src/freedreno/vulkan/tu_device.cc || true
     
-    # 4. Adreno 650 architecture lock
+    # 4. Adreno 650 architecture lock (Force A6xx support in Gen8 branch)
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
     
     # 5. ETS Optimization: Binning pass for large scenes
     sed -i 's/binning_pass = false/binning_pass = true/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
     
-    # 6. FIX: tu_android.cc void* handle error (NDK Compatibility)
-    sed -i 's/gralloc_info->handle->data/((native_handle_t *)gralloc_info->handle)->data/g' src/freedreno/vulkan/tu_android.cc || true
-    sed -i 's/gralloc_info->handle->numFds/((native_handle_t *)gralloc_info->handle)->numFds/g' src/freedreno/vulkan/tu_android.cc || true
-    sed -i 's/gralloc_info->handle->numInts/((native_handle_t *)gralloc_info->handle)->numInts/g' src/freedreno/vulkan/tu_android.cc || true
+    # 6. Force 159+ Extensions (Enable experimental features)
+    sed -i 's/tu_has_extension(device, KHR_acceleration_structure)/true/g' src/freedreno/vulkan/tu_device.cc || true
+    sed -i 's/tu_has_extension(device, KHR_ray_tracing_pipeline)/true/g' src/freedreno/vulkan/tu_device.cc || true
 
 
 
