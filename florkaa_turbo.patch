@@ -5,7 +5,7 @@
  #include "tu_pipeline.h"
  
 -#define TU_DEVICE_BINARY_CACHE_SIZE 64
-+#define TU_DEVICE_BINARY_CACHE_SIZE 2048
++#define TU_DEVICE_BINARY_CACHE_SIZE 4096
  
  static int
  tu_get_debug_flags()
@@ -37,13 +37,13 @@
     compiler->gpu_id = gpu_id;
     compiler->options = options;
 -   compiler->max_regs = 128;
-+   compiler->max_regs = 112; /* Omega-Turbo: High-Pressure Limit */
++   compiler->max_regs = 112; /* SD870 High-Performance Ceiling */
  
     if (compiler->gpu_id >= 600) {
        compiler->branch_dest_alignment = 4;
 --- a/src/freedreno/common/freedreno_devices.py
 +++ b/src/freedreno/common/freedreno_devices.py
-@@ -100,2 +100,19 @@
+@@ -100,2 +100,20 @@
 -a6xx_base = GPUProps(
 -    reg_size_vec4 = 128,
 +a6xx_base = GPUProps(
@@ -63,4 +63,24 @@
 +    gmem_ccu_depth_cache_fraction = 1.0,
 +    gmem_per_ccu_depth_cache_size = 512 * 1024,
 +    has_early_preamble = False,
++    has_salu_int_narrowing_quirk = True,
 +)
++
+--- a/src/freedreno/ir3/ir3_nir.c
++++ b/src/freedreno/ir3/ir3_nir.c
+@@ -55,6 +55,15 @@
+    .lower_to_scalar = true,
+    .has_fsub = true,
+    .has_isub = true,
++   .fuse_ffma16 = true,
++   .fuse_ffma32 = true,
++   .fuse_ffma64 = true,
++   .lower_flrp16 = true,
++   .lower_flrp32 = true,
++   .lower_flrp64 = true,
++   .lower_fpow = true,
++   .lower_fmod = true,
++   .lower_bitfield_insert = true,
+ };
+ 
+ static void

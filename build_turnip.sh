@@ -124,7 +124,7 @@ EOF
         --cross-file "android-aarch64.txt" \
         --native-file "native.txt" \
         --prefix "/tmp/turnip-$1" \
-        -Dbuildtype=release \
+        -Dbuildtype=release -Doptimization=3 -Db_lto=true -Dc_args='-ffast-math -march=armv8-a+crypto+crc' -Dcpp_args='-ffast-math -march=armv8-a+crypto+crc' \
         -Dstrip=true \
         -Dplatforms=android \
         -Dvideo-codecs= \
