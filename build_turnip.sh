@@ -43,8 +43,9 @@ prepare_workdir(){
     echo "Applying Florkaa Turbo Core Patch..."
     patch -p1 < "$workdir/../florkaa_turbo.patch" || true
     
-    # 6. ARCHITECTURE LOCK: Adreno 650 (Snapdragon 870)
+    # 6. ARCHITECTURE LOCK & STABILITY FIX (Steven R6 Logic)
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
+    sed -i '/a6xx_base = GPUProps(/a \        has_early_preamble = False,' src/freedreno/common/freedreno_devices.py || true
     
     # 7. STRIP LOGS (Zero Overhead) - REMOVED to avoid syntax errors in tu_autotune.cc
 
