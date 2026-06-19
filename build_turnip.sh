@@ -5,14 +5,14 @@ deps="git meson ninja patchelf unzip curl pip flex bison zip glslangValidator py
 workdir="$(pwd)/turnip_workdir"
 ndkver="android-ndk-r29"
 ndk="$workdir/$ndkver/toolchains/llvm/prebuilt/linux-x86_64/bin"
-mesasrc="https://github.com/whitebelyash/mesa-tu8.git"
+mesasrc="https://gitlab.freedesktop.org/mesa/mesa.git"
 srcfolder="mesa"
 BUILD_VERSION="${BUILD_VERSION:-1.0}"
 
 run_all(){
     check_deps
     prepare_workdir
-	build_lib_for_android a6xx
+	build_lib_for_android main
 }
 
 check_deps(){
@@ -33,11 +33,8 @@ prepare_workdir(){
     fi
 
     rm -rf "$srcfolder"
-    git clone "$mesasrc" --depth=1 --no-single-branch "$srcfolder"
+    git clone "$mesasrc" --depth=1 -b mesa-24.1.1 "$srcfolder"
     cd "$srcfolder"
-    
-    # APPLY FLORKAA 100+ TWEAKS (TALO ABSOLUTO)
-    echo "Applying 100+ Performance Tweaks..."
     
     # APPLY FLORKAA ELITE 2.0 (PRECISÃO CIRÚRGICA NO TALO)
     echo "Applying Elite 2.0 Performance Tweaks..."
