@@ -39,31 +39,33 @@ prepare_workdir(){
     # APPLY FLORKAA 100+ TWEAKS (TALO ABSOLUTO)
     echo "Applying 100+ Performance Tweaks..."
     
-    # [1-20] IR3 COMPILER AGGRESSION
-    find src/freedreno/ir3/ -name "*.c" -exec sed -i 's/likely(/unlikely(0) \&\& /g' {} + || true # Force static branch prediction
-    sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 64;/g' src/freedreno/ir3/ir3_compiler.c || true # Ultra-low reg pressure for max occupancy
+    # APPLY FLORKAA ELITE 2.0 (PRECISÃO CIRÚRGICA NO TALO)
+    echo "Applying Elite 2.0 Performance Tweaks..."
+    
+    # 1. IR3 Compiler: 72 regs is the sweet spot for Adreno 650 (No spilling)
+    sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 72;/g' src/freedreno/ir3/ir3_compiler.c || true
     sed -i 's/bool opt_preamble = true;/bool opt_preamble = true; bool opt_aggressive = true;/g' src/freedreno/ir3/ir3_compiler.c || true
     
-    # [21-40] VULKAN CORE & COMMAND BUFFER BYPASS
+    # 2. LRZ & GMEM: Extreme performance for ETS open maps
     sed -i 's/tu_cmd_buffer_emit_gmem_config(cmd, &cmd->state.pass->gmem_config, false);/tu_cmd_buffer_emit_gmem_config(cmd, \&cmd->state.pass->gmem_config, true);/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    sed -i 's/cmd->state.lrz.enabled = true;/cmd->state.lrz.enabled = true; cmd->state.lrz.fast_clear = true; cmd->state.lrz.gpu_dir_write = true;/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    sed -i 's/MESA_VK_ALLOC_DEFAULT/MESA_VK_ALLOC_INTERNAL_POOL/g' src/freedreno/vulkan/*.cc || true
+    sed -i 's/cmd->state.lrz.enabled = true;/cmd->state.lrz.enabled = true; cmd->state.lrz.fast_clear = true;/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
     
-    # [41-60] MEMORY & CACHE OPTIMIZATION
-    sed -i 's/TU_DEVICE_BINARY_CACHE_SIZE = 64/TU_DEVICE_BINARY_CACHE_SIZE = 512/g' src/freedreno/vulkan/tu_device.cc || true # 8x Pipeline Cache
-    sed -i 's/fd_bo_new(dev->dev, size, 0, "descriptor")/fd_bo_new(dev->dev, size, FD_BO_GPUREADONLY, "descriptor")/g' src/freedreno/vulkan/tu_descriptor_set.cc || true
+    # 3. Pipeline Cache: 512 entries for zero stutter
+    sed -i 's/TU_DEVICE_BINARY_CACHE_SIZE = 64/TU_DEVICE_BINARY_CACHE_SIZE = 512/g' src/freedreno/vulkan/tu_device.cc || true
     
-    # [61-80] ADRENO 650 ARCHITECTURE TUNING
+    # 4. Async Compute: 4 priority levels for better CPU/GPU balance
+    sed -i 's/.num_priority_levels = 2/.num_priority_levels = 4/g' src/freedreno/vulkan/tu_device.cc || true
+    
+    # 5. Safe Log Strip: No overhead without breaking syntax
+    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_logi(/if(0)mesa_logi(/g' {} + || true
+    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_logw(/if(0)mesa_logw(/g' {} + || true
+    
+    # 6. Adreno 650 architecture lock
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
-    sed -i 's/.num_priority_levels = 2/.num_priority_levels = 4/g' src/freedreno/vulkan/tu_device.cc || true # More priority levels for async compute
     
-    # [81-100] ZERO OVERHEAD & STRIP LOGS
-    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_log[iwe](/\/\/ /g' {} + || true
-    find src/freedreno/vulkan/ -name "*.c" -exec sed -i 's/mesa_log[iwe](/\/\/ /g' {} + || true
-    sed -i 's/assert(/ \/\/ /g' src/freedreno/vulkan/*.cc || true # Remove all asserts for raw speed
-    
-    # [EXTRA] ETS SPECIFIC: Increase binning size for large open maps
+    # 7. ETS Optimization: Binning pass for large scenes
     sed -i 's/binning_pass = false/binning_pass = true/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
+
 
     
     echo "#define TUGEN8_DRV_VERSION \"\"" > ./src/freedreno/vulkan/tu_version.h
