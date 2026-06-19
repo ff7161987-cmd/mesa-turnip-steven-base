@@ -54,6 +54,11 @@ prepare_workdir(){
     
     # 5. ETS Optimization: Binning pass for large scenes
     sed -i 's/binning_pass = false/binning_pass = true/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
+    
+    # 6. FIX: tu_android.cc void* handle error (NDK Compatibility)
+    sed -i 's/gralloc_info->handle->data/((native_handle_t *)gralloc_info->handle)->data/g' src/freedreno/vulkan/tu_android.cc || true
+    sed -i 's/gralloc_info->handle->numFds/((native_handle_t *)gralloc_info->handle)->numFds/g' src/freedreno/vulkan/tu_android.cc || true
+    sed -i 's/gralloc_info->handle->numInts/((native_handle_t *)gralloc_info->handle)->numInts/g' src/freedreno/vulkan/tu_android.cc || true
 
 
 
