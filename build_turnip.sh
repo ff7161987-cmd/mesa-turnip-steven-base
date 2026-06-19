@@ -70,7 +70,8 @@ prepare_workdir(){
 
 build_lib_for_android(){
     cd "$workdir/$srcfolder"
-    git checkout "$1"
+    # Checkout removed because we already clone the correct branch/tag
+
 
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.cc || true
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.c || true
