@@ -70,7 +70,7 @@ prepare_workdir(){
 
 build_lib_for_android(){
     cd "$workdir/$srcfolder"
-    git checkout "origin/$1"
+    git checkout "$1"
 
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.cc || true
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.c || true
