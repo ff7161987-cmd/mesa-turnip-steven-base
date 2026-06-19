@@ -46,8 +46,7 @@ prepare_workdir(){
     # 6. ARCHITECTURE LOCK: Adreno 650 (Snapdragon 870)
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
     
-    # 7. STRIP LOGS (Zero Overhead)
-    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_log[iw](/\/\/ /g' {} + || true
+    # 7. STRIP LOGS (Zero Overhead) - REMOVED to avoid syntax errors in tu_autotune.cc
 
 
 
