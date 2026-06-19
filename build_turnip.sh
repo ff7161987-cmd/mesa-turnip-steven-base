@@ -36,6 +36,14 @@ prepare_workdir(){
     git clone "$mesasrc" --depth=1 --no-single-branch "$srcfolder"
     cd "$srcfolder"
     
+    # APPLY FLORKAA PERFORMANCE OPTIMIZATIONS
+    echo "Applying Florkaa optimizations..."
+    # 1. GMEM Hysteresis Optimization (Smooth FPS in ETS)
+    sed -i 's/tu_cmd_buffer_emit_gmem_config(cmd, &cmd->state.pass->gmem_config, false);/tu_cmd_buffer_emit_gmem_config(cmd, \&cmd->state.pass->gmem_config, true);/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
+    
+    # 2. IR3 Register Allocation Tuning (Reduce pressure for SD870)
+    sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 96;/g' src/freedreno/ir3/ir3_compiler.c || true
+    
     echo "#define TUGEN8_DRV_VERSION \"\"" > ./src/freedreno/vulkan/tu_version.h
 }
 
@@ -130,12 +138,12 @@ EOF
     cat <<EOF >"meta.json"
 {
   "schemaVersion": 1,
-  "name": "Turnip Gen8 V29",
-  "description": "A8xx support",
-  "author": "stevenmx",
+  "name": "Turnip-ETS-Turbo (Florkaa)",
+  "description": "Snapdragon 870 Optimized - GMEM Hysteresis & IR3 Tuning",
+  "author": "Florkaa282810",
   "packageVersion": "1",
   "vendor": "Mesa",
-  "driverVersion": "Vulkan 1.4.348",
+  "driverVersion": "24.1.1-Turbo",
   "minApi": 28,
   "libraryName": "libvulkan_freedreno.so"
 }
