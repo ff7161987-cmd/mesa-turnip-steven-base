@@ -1,6 +1,5 @@
 #!/bin/bash -e
 set -o pipefail
-
 deps="git meson ninja patchelf unzip curl pip flex bison zip glslangValidator python3"
 workdir="$(pwd)/turnip_workdir"
 ndkver="android-ndk-r29"
@@ -8,13 +7,11 @@ ndk="$workdir/$ndkver/toolchains/llvm/prebuilt/linux-x86_64/bin"
 mesasrc="https://github.com/whitebelyash/mesa-tu8.git"
 srcfolder="mesa"
 BUILD_VERSION="${BUILD_VERSION:-1.0}"
-
 run_all(){
     check_deps
     prepare_workdir
-	build_lib_for_android gen8
+    build_lib_for_android gen8
 }
-
 check_deps(){
     for deps_chk in $deps; do
         if ! command -v "$deps_chk" >/dev/null 2>&1 ; then
@@ -23,21 +20,16 @@ check_deps(){
     done
     pip install mako --break-system-packages &> /dev/null || true
 }
-
 prepare_workdir(){
     mkdir -p "$workdir" && cd "$workdir"
-
     if [ ! -d "$ndkver" ]; then
         curl -sL "https://dl.google.com/android/repository/${ndkver}-linux.zip" -o "${ndkver}-linux.zip" &> /dev/null
         unzip -q "${ndkver}-linux.zip" &> /dev/null
     fi
-
     rm -rf "$srcfolder"
-    git clone "$mesasrc" --depth=1 -b gen8 "$srcfolder"
+    git clone "$mesasrc" --depth=1 --no-single-branch "$srcfolder"
     cd "$srcfolder"
-    
-    # APPLY FLORKAA ELITE 4.0 (159+ EXTENSIONS + TALO ABSOLUTO)
-    echo "Applying Elite 4.0 Performance Tweaks..."
+    echo "#define TUGEN8_DRV_VERSION \"\"" > ./src/freedreno/vulkan/tu_version.h
     
     # --- CORAÇÃO DO PROJETO: INTERVENÇÃO DE ENGENHARIA MESA3D ---
     echo "Applying Florkaa Turbo Core Patch..."
@@ -46,30 +38,16 @@ prepare_workdir(){
     # 6. ARCHITECTURE LOCK & STABILITY FIX (Steven R6 Logic)
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
     sed -i '/a6xx_base = GPUProps(/a \        has_early_preamble = False,' src/freedreno/common/freedreno_devices.py || true
-    
-    # 7. STRIP LOGS (Zero Overhead) - REMOVED to avoid syntax errors in tu_autotune.cc
-
-
-
-
-    
-    echo "#define TUGEN8_DRV_VERSION \"\"" > ./src/freedreno/vulkan/tu_version.h
 }
-
 build_lib_for_android(){
     cd "$workdir/$srcfolder"
-    # Checkout removed because we already clone the correct branch/tag
-
-
+    git checkout "origin/$1"
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.cc || true
     sed -i 's/ (%s)//g' src/freedreno/vulkan/tu_device.c || true
-
-    sed -i '/a7xx_gen1 = GPUProps(/a \        has_early_preamble = False,' src/freedreno/common/freedreno_devices.py || true
     sed -i 's/typedef const native_handle_t\* buffer_handle_t;/typedef void\* buffer_handle_t;/g' include/android_stub/cutils/native_handle.h || true
     sed -i 's/, hnd->handle/, (void \*)hnd->handle/g' src/util/u_gralloc/u_gralloc_fallback.c || true
     sed -i 's/native_buffer->handle->/((const native_handle_t \*)native_buffer->handle)->/g' src/vulkan/runtime/vk_android.c || true
     sed -i 's/anb->handle->/((const native_handle_t \*)anb->handle)->/g' src/vulkan/runtime/vk_android.c || true
-
     mkdir -p "$workdir/bin"
     ln -sf "$ndk/clang" "$workdir/bin/cc"
     ln -sf "$ndk/clang++" "$workdir/bin/c++"
@@ -82,13 +60,14 @@ build_lib_for_android(){
     export OBJDUMP=llvm-objdump
     export OBJCOPY=llvm-objcopy
     export LDFLAGS="-fuse-ld=lld"
-
     GITHASH=$(git rev-parse --short HEAD)
-
     local cver="36"
     [ ! -f "$ndk/aarch64-linux-android${cver}-clang" ] && cver="35"
     [ ! -f "$ndk/aarch64-linux-android${cver}-clang" ] && cver="34"
-
+    
+    # Omega-Turbo 2.0: Aggressive Compiler Flags for AArch64
+    local opt_flags="-O3 -ffast-math -march=armv8-a+crypto+crc -fno-plt"
+    
     cat <<EOF >"android-aarch64.txt"
 [binaries]
 ar = '$ndk/llvm-ar'
@@ -98,14 +77,15 @@ c_ld = '$ndk/ld.lld'
 cpp_ld = '$ndk/ld.lld'
 strip = '$ndk/llvm-strip'
 pkg-config = ['env', 'PKG_CONFIG_LIBDIR=$ndk/pkg-config', '/usr/bin/pkg-config']
-
+[built-in options]
+c_args = [$(echo $opt_flags | sed "s/ /', '/g" | sed "s/^/'/" | sed "s/$/'/")]
+cpp_args = [$(echo $opt_flags | sed "s/ /', '/g" | sed "s/^/'/" | sed "s/$/'/")]
 [host_machine]
 system = 'android'
 cpu_family = 'aarch64'
 cpu = 'armv8'
 endian = 'little'
 EOF
-
     cat <<EOF >"native.txt"
 [build_machine]
 c = ['ccache', 'clang']
@@ -119,12 +99,11 @@ cpu_family = 'x86_64'
 cpu = 'x86_64'
 endian = 'little'
 EOF
-
     meson setup build-android-aarch64 \
         --cross-file "android-aarch64.txt" \
         --native-file "native.txt" \
         --prefix "/tmp/turnip-$1" \
-        -Dbuildtype=release -Doptimization=3 -Db_lto=true -Dc_args='-ffast-math -march=armv8-a+crypto+crc' -Dcpp_args='-ffast-math -march=armv8-a+crypto+crc' \
+        -Dbuildtype=release \
         -Dstrip=true \
         -Dplatforms=android \
         -Dvideo-codecs= \
@@ -136,31 +115,25 @@ EOF
         -Dfreedreno-kmds=kgsl \
         -Degl=disabled \
         -Dandroid-libbacktrace=disabled
-
     ninja -C build-android-aarch64 install
-
     if [ ! -f "/tmp/turnip-$1/lib/libvulkan_freedreno.so" ]; then
         exit 1
     fi
-
     cd "/tmp/turnip-$1/lib"
-    
     cat <<EOF >"meta.json"
 {
   "schemaVersion": 1,
-  "name": "Turnip-ETS-Turbo (Florkaa)",
-  "description": "Snapdragon 870 Optimized - GMEM Hysteresis & IR3 Tuning",
-  "author": "Florkaa282810",
-  "packageVersion": "1",
+  "name": "Turnip-Omega-Turbo-Florkaa",
+  "description": "SD870 Extreme Performance Build",
+  "author": "Florkaa-Manus",
+  "packageVersion": "10.0",
   "vendor": "Mesa",
-  "driverVersion": "24.1.1-Turbo",
+  "driverVersion": "Vulkan 1.3.352 (Omega)",
   "minApi": 28,
   "libraryName": "libvulkan_freedreno.so"
 }
 EOF
-
-    zip -9 "/tmp/a6xx-ETS-Turbo-Florkaa-V${BUILD_VERSION}.zip" libvulkan_freedreno.so meta.json
-    cp "/tmp/a6xx-ETS-Turbo-Florkaa-V${BUILD_VERSION}.zip" "$workdir/"
+    zip -9 "/tmp/a8xx-$1-V${BUILD_VERSION}.zip" libvulkan_freedreno.so meta.json
+    cp "/tmp/a8xx-$1-V${BUILD_VERSION}.zip" "$workdir/"
 }
-
 run_all
