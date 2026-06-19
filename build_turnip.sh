@@ -40,31 +40,14 @@ prepare_workdir(){
     echo "Applying Elite 4.0 Performance Tweaks..."
     
     # --- CORAÇÃO DO PROJETO: INTERVENÇÃO DE ENGENHARIA MESA3D ---
-    echo "Applying Native Core Patches (C++ Level)..."
-    
-    # 1. COMMAND BUFFER: Reduzir flush e agrupar draws (tu_cmd_buffer.cc)
-    sed -i 's/tu_emit_cache_flush(cmd);/if(cmd->state.dirty) tu_emit_cache_flush(cmd);/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    
-    # 2. MEMORY: Otimizar LRZ e GMEM nativamente (tu_cmd_buffer.cc)
-    sed -i 's/cmd->state.lrz.enabled = true;/cmd->state.lrz.enabled = true; cmd->state.lrz.fast_clear = true; cmd->state.lrz.gpu_dir_write = true;/g' src/freedreno/vulkan/tu_cmd_buffer.cc || true
-    
-    # 3. IR3 COMPILER: Register allocation e Instruction Scheduling (ir3_compiler.c)
-    sed -i 's/compiler->max_regs = 128;/compiler->max_regs = 72;/g' src/freedreno/ir3/ir3_compiler.c || true
-    sed -i 's/bool opt_preamble = true;/bool opt_preamble = true; bool opt_aggressive = true;/g' src/freedreno/ir3/ir3_compiler.c || true
-    
-    # 4. PIPELINE CACHE: Aumentar hit ratio e reduzir stalls (tu_device.cc)
-    sed -i 's/TU_DEVICE_BINARY_CACHE_SIZE = 64/TU_DEVICE_BINARY_CACHE_SIZE = 1024/g' src/freedreno/vulkan/tu_device.cc || true
-    sed -i 's/.num_priority_levels = 2/.num_priority_levels = 8/g' src/freedreno/vulkan/tu_device.cc || true
-    
-    # 5. CPU OVERHEAD: Reduzir mutex contention (tu_device.cc)
-    sed -i 's/pthread_mutex_lock(&device->mutex);/ \/\/ Lock-free attempt \n pthread_mutex_lock(&device->mutex);/g' src/freedreno/vulkan/tu_device.cc || true
+    echo "Applying Florkaa Turbo Core Patch..."
+    patch -p1 < "$workdir/../florkaa_turbo.patch" || true
     
     # 6. ARCHITECTURE LOCK: Adreno 650 (Snapdragon 870)
     sed -i 's/GPUProps(7, 0, 0, 1)/GPUProps(6, 5, 0, 1)/g' src/freedreno/common/freedreno_devices.py || true
     
     # 7. STRIP LOGS (Zero Overhead)
-    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_logi(/if(0)mesa_logi(/g' {} + || true
-    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_logw(/if(0)mesa_logw(/g' {} + || true
+    find src/freedreno/vulkan/ -name "*.cc" -exec sed -i 's/mesa_log[iw](/\/\/ /g' {} + || true
 
 
 
