@@ -65,8 +65,8 @@ build_lib_for_android(){
     [ ! -f "$ndk/aarch64-linux-android${cver}-clang" ] && cver="35"
     [ ! -f "$ndk/aarch64-linux-android${cver}-clang" ] && cver="34"
     
-    # Omega-Turbo 2.0: Aggressive Compiler Flags for AArch64
-    local opt_flags="-O3 -ffast-math -march=armv8-a+crypto+crc -fno-plt"
+    # Winlator Max FPS: Balanced & Powerful Flags
+    local opt_flags="-O3 -ffast-math -march=armv8-a+crypto+crc"
     
     cat <<EOF >"android-aarch64.txt"
 [binaries]

@@ -5,7 +5,7 @@
  #include "tu_pipeline.h"
  
 -#define TU_DEVICE_BINARY_CACHE_SIZE 64
-+#define TU_DEVICE_BINARY_CACHE_SIZE 4096
++#define TU_DEVICE_BINARY_CACHE_SIZE 512
  
  static int
  tu_get_debug_flags()
@@ -13,7 +13,7 @@
     device->physical_device = physical_device;
     device->instance = physical_device->instance;
 -   device->num_priority_levels = 2;
-+   device->num_priority_levels = 8;
++   device->num_priority_levels = 4;
  
     tu_device_get_cache_uuid(device->cache_uuid);
  
@@ -23,10 +23,10 @@
     if (cmd->state.pass)
        tu_emit_cache_flush(cmd);
  
-+   /* Omega-Turbo: Native LRZ/GMEM Aggression */
++   /* Balanced Turbo: Native LRZ/GMEM Otimizado */
 +   cmd->state.lrz.fast_clear = true;
 +   cmd->state.lrz.enabled = true;
-+   cmd->state.lrz.gpu_dir_write = true;
++   cmd->state.lrz.dir_tracking = true;
 +
     tu_cs_emit_call(cs, &cmd->state.pass->gmem_config);
  }
@@ -37,7 +37,7 @@
     compiler->gpu_id = gpu_id;
     compiler->options = options;
 -   compiler->max_regs = 128;
-+   compiler->max_regs = 112; /* SD870 High-Performance Ceiling */
++   compiler->max_regs = 124; /* Balanced Turbo: Sweet Spot */
  
     if (compiler->gpu_id >= 600) {
        compiler->branch_dest_alignment = 4;
@@ -48,22 +48,22 @@
 -    reg_size_vec4 = 128,
 +a6xx_base = GPUProps(
 +    reg_size_vec4 = 128,
-+    sysmem_vpc_attr_buf_size = 131072 * 2,
-+    sysmem_vpc_pos_buf_size = 65536 * 2,
-+    sysmem_vpc_bv_pos_buf_size = 32768 * 2,
++    sysmem_vpc_attr_buf_size = 131072,
++    sysmem_vpc_pos_buf_size = 65536,
++    sysmem_vpc_bv_pos_buf_size = 32768,
 +    sysmem_ccu_color_cache_fraction = 1.0,
-+    sysmem_per_ccu_color_cache_size = 256 * 1024,
++    sysmem_per_ccu_color_cache_size = 192 * 1024,
 +    sysmem_ccu_depth_cache_fraction = 1.0,
-+    sysmem_per_ccu_depth_cache_size = 512 * 1024,
-+    gmem_vpc_attr_buf_size = 49152 * 2,
-+    gmem_vpc_pos_buf_size = 24576 * 2,
-+    gmem_vpc_bv_pos_buf_size = 32768 * 2,
-+    gmem_ccu_color_cache_fraction = 1.0,
-+    gmem_per_ccu_color_cache_size = 256 * 1024,
-+    gmem_ccu_depth_cache_fraction = 1.0,
-+    gmem_per_ccu_depth_cache_size = 512 * 1024,
-+    has_early_preamble = False,
-+    has_salu_int_narrowing_quirk = True,
++    sysmem_per_ccu_depth_cache_size = 384 * 1024,
++    gmem_vpc_attr_buf_size = 49152,
++    gmem_vpc_pos_buf_size = 24576,
++    gmem_vpc_bv_pos_buf_size = 32768,
++    gmem_ccu_color_cache_fraction = 0.5,
++    gmem_per_ccu_color_cache_size = 128 * 1024,
++    gmem_ccu_depth_cache_fraction = 0.75,
++    gmem_per_ccu_depth_cache_size = 256 * 1024,
++    has_early_preamble = true,
++    has_salu_int_narrowing_quirk = true,
 +)
 +
 --- a/src/freedreno/ir3/ir3_nir.c
@@ -74,10 +74,8 @@
     .has_isub = true,
 +   .fuse_ffma16 = true,
 +   .fuse_ffma32 = true,
-+   .fuse_ffma64 = true,
 +   .lower_flrp16 = true,
 +   .lower_flrp32 = true,
-+   .lower_flrp64 = true,
 +   .lower_fpow = true,
 +   .lower_fmod = true,
 +   .lower_bitfield_insert = true,
