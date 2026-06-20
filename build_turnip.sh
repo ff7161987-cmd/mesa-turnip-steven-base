@@ -133,7 +133,7 @@ EOF
   "libraryName": "libvulkan_freedreno.so"
 }
 EOF
-    zip -9 "/tmp/a8xx-$1-V${BUILD_VERSION}.zip" libvulkan_freedreno.so meta.json
-    cp "/tmp/a8xx-$1-V${BUILD_VERSION}.zip" "$workdir/"
+    zip -9 "/tmp/a6xx-ETS-Turbo-Florkaa-Elite-11.zip" libvulkan_freedreno.so meta.json
+    cp "/tmp/a6xx-ETS-Turbo-Florkaa-Elite-11.zip" "$workdir/"
 }
 run_all
